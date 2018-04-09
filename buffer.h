@@ -4,11 +4,9 @@
 #include <mutex>
 #include <condition_variable>
 
-#include "CoreMinimal.h"
-
 #include "BufferPolicies.h"
 
-template<typename T, size_t buffsize = 1, typename Adder = BlockingAdder, typename Remover = BlockingRemover>
+template<typename T, size_t buffsize, typename Adder = BlockingAdder, typename Remover = BlockingRemover>
 class Buffer;
 
 using VideoBuffer = Buffer<TArray<FColor>, 30, RemoveOldElementsAdder, BlockingRemover>;
@@ -30,8 +28,7 @@ class Buffer
 public:
 	/*
 	Buffer<T>::GetInstance() creates
-	buffer of T elements. T must be 
-	TArray<FColor> in case of video buffer.
+	buffer of T elements.
 	*/
 	static Buffer& GetInstance() {
 		static Buffer instance;
@@ -39,14 +36,12 @@ public:
 	}
 
 	void add(T& num) {
-		UE_LOG(LogTemp, Log, TEXT("add, size = %d"), buffer_.size());
 		Adder obj;
 		obj(mu, cond, buffer_, buffsize, num);
 		return;
 	}
 
 	T remove() {
-		UE_LOG(LogTemp, Log, TEXT("remove, size = %d"), buffer_.size());
 		Remover obj;
 		T res = obj(mu, cond, buffer_);
 		return res;
