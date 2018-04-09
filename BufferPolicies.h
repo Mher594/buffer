@@ -1,5 +1,9 @@
 #pragma once
 
+#include <algorithm>
+#include <deque>
+#include <iterator>
+
 template<typename T, typename BufferT>
 struct IsAdder
 {
@@ -36,6 +40,21 @@ struct IsRemover
 	}
 	static const bool Is = sizeof(Test<T, BufferT>(0)) == sizeof(char);
 };
+
+template<class ForwardIt>
+ForwardIt remove_every_nth_element(ForwardIt first, ForwardIt last, int n)
+{
+	if (first != last)
+	{
+		for (ForwardIt it = first, int i = 1; ++it != last, ++i; )
+		{
+			if (i % n == 0)
+				*first++ = std::move(*it);
+		}
+	}
+
+	return first;
+}
 
 /*
 Blocking add Policy.
@@ -100,20 +119,24 @@ Non blocking add Policy
 which removes every 3rd element
 to make room for new ones.
 */
-//struct RemoveOldElementsAdder
-//{
-//	template <typename BufferT>
-//	void operator() (std::mutex& lock, std::condition_variable& condVar, BufferT& buffer, size_t size, const typename BufferT::value_type e)
-//	{
-//		std::unique_lock<std::mutex> locker(lock);
-//		if (buffer.size() == size) {
-//			// todo
-//		}
-//		buffer.push_back(e);
-//		locker.unlock();
-//		condVar.notify_all();
-//	}
-//};
+struct RemoveEveryNthElementsAdder
+{
+	RemoveEveryNthElementsAdder(int n) : nth(n) {}
+
+	template <typename BufferT>
+	void operator() (std::mutex& lock, std::condition_variable& condVar, BufferT& buffer, size_t size, const typename BufferT::value_type e)
+	{
+		std::unique_lock<std::mutex> locker(lock);
+		if (buffer.size() == size) {
+			buffer.erase(remove_every_nth_element(buffer.begin(), buffer.end()), nth);
+		}
+		buffer.push_back(e);
+		locker.unlock();
+		condVar.notify_all();
+	}
+
+	int nth;
+};
 
 /*
 Non blocking remove Policy
