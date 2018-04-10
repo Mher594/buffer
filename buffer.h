@@ -9,9 +9,6 @@
 template<typename T, size_t buffsize, typename Adder = BlockingAdder, typename Remover = BlockingRemover>
 class Buffer;
 
-using VideoBuffer = Buffer<TArray<FColor>, 30, RemoveOldElementsAdder, BlockingRemover>;
-//using AudioBuffer = Buffer<int16, std::numeric_limits<uint64>::max()>;
-
 /*
 class Buffer represents a
 thread safe buffer for producer 
