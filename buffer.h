@@ -4,7 +4,7 @@
 #include <mutex>
 #include <condition_variable>
 
-#include "BufferPolicies.h"
+#include "buffercommon.h"
 
 template<typename T, size_t buffsize, typename Adder = BlockingAdder, typename Remover = BlockingRemover>
 class Buffer;
@@ -23,32 +23,39 @@ class Buffer
 	static_assert(IsRemover<Remover, std::deque<T>>::Is == true, "not a Remover");
 
 public:
-	/*
-	Buffer<T>::GetInstance() creates
-	buffer of T elements.
-	*/
-	static Buffer& GetInstance() {
-		static Buffer instance;
-		return instance;
-	}
+	Buffer() = default;
+	Buffer(const Buffer&) = delete;
+	Buffer& operator=(const Buffer&) = delete;
 
-	void add(T& num) {
+	void push(T& num) {
 		Adder obj;
 		obj(mu, cond, buffer_, buffsize, num);
 		return;
 	}
 
-	T remove() {
+	T pop() {
 		Remover obj;
 		T res = obj(mu, cond, buffer_);
 		return res;
 	}
+	
+	size_t size() const {
+		return buffer_.size();
+	}
+	
+	size_t capacity() const {
+		return size_;
+	}
+	
+	bool empty() const {
+		return buffer_.empty();
+	}
+	
+	bool full() const {
+		return size_ == buffer_.size();
+	}
 
 private:
-	Buffer() = default;
-	Buffer(const Buffer&) = delete;
-	Buffer& operator=(const Buffer&) = delete;
-
 	std::mutex mu;
 	std::condition_variable cond;
 
